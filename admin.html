@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fupa Admin — FUPA Snack</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0d47a1">
+<style>
+  :root{
+    --bg1:#0d47a1;
+    --bg2:#42a5f5;
+    --glass:rgba(255,255,255,.12);
+    --glass-2:rgba(255,255,255,.08);
+    --stroke:rgba(255,255,255,.25);
+    --light:#fff;
+    --muted:rgba(255,255,255,.75);
+    --danger:#e53935;
+    --success:#00c853;
+    --accent:#64b5f6;
+  }
+  html,body{height:100%;margin:0;font-family:Segoe UI,system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;color:#fff;background:linear-gradient(135deg,var(--bg1),var(--bg2));}
+  body{display:flex;flex-direction:column;overflow:hidden;}
+  /* Animated smoke background */
+  body::before, body::after{
+    content:"";position:fixed;inset:-20%;z-index:0;pointer-events:none;
+    background:radial-gradient(closest-side,rgba(255,255,255,.08),transparent 60%) 0 0/40% 40%,
+               radial-gradient(closest-side,rgba(255,255,255,.06),transparent 60%) 50% 50%/50% 50%;
+    filter:blur(40px);animation:smoke 18s ease-in-out infinite alternate;
+  }
+  body::after{animation-duration:26s;opacity:.7;mix-blend-mode:screen;}
+  @keyframes smoke{from{transform:translate3d(-2%,2%,0) scale(1.05);}to{transform:translate3d(2%,-2%,0) scale(1.08);}}
+
+  header, footer{position:relative;z-index:2;background:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.18));backdrop-filter:blur(8px);border-bottom:1px solid var(--stroke);}
+  header{display:flex;align-items:center;justify-content:space-between;padding:.6rem 1rem;}
+  header .left{display:flex;align-items:center;gap:.6rem;font-weight:700;letter-spacing:.5px;}
+  header .left .logo{
+    width:12px;height:12px;border-radius:50%;
+    box-shadow:0 0 14px 4px #90caf9,0 0 40px 8px rgba(144,202,249,.35) inset;background:#bbdefb;
+  }
+  header .right{display:flex;align-items:center;gap:.6rem;}
+  .icon-btn{
+    appearance:none;border:none;background:var(--glass);backdrop-filter:blur(8px);color:#fff;
+    border:1px solid var(--stroke);border-radius:10px;padding:.5rem .7rem;cursor:pointer;
+    display:inline-flex;align-items:center;gap:.4rem;transition:.25s;position:relative;
+  }
+  .icon-btn:hover{transform:translateY(-1px);box-shadow:0 10px 20px rgba(0,0,0,.25);}
+  .badge{position:absolute;top:-6px;right:-6px;background:#ff1744;color:#fff;border-radius:999px;padding:.12rem .4rem;font-size:.7rem;display:none;}
+
+  main{position:relative;z-index:1;flex:1;overflow:auto;padding:1rem;display:grid;gap:1rem;grid-template-columns:1fr;}
+  @media(min-width:992px){ main{grid-template-columns: 2fr 1fr;} }
+
+  .panel{
+    background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.08));
+    border:1px solid var(--stroke);border-radius:16px;padding:1rem;backdrop-filter:blur(8px);
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+  }
+  .panel h3{margin:.2rem 0 1rem;font-size:1.1rem}
+  .row{display:flex;flex-wrap:wrap;gap:.6rem;align-items:end}
+
+  /* Filters */
+  .filters input,.filters select{
+    background:var(--glass-2);border:1px solid var(--stroke);color:#fff;border-radius:10px;
+    padding:.5rem .7rem;outline:none;min-width:160px;
+  }
+  .filters .btn{background:linear-gradient(135deg,#42a5f5,#0d47a1);border:none;color:#fff;font-weight:700;border-radius:10px;padding:.55rem .8rem;cursor:pointer}
+  .filters .btn:hover{filter:brightness(1.05)}
+
+  /* Table */
+  .table-wrap{overflow:auto;border-radius:12px;border:1px solid var(--stroke)}
+  table{width:100%;border-collapse:separate;border-spacing:0;min-width:860px;background:rgba(0,0,0,.12)}
+  th,td{padding:.6rem .7rem;border-bottom:1px solid var(--stroke);text-align:left}
+  th{position:sticky;top:0;background:rgba(0,0,0,.35);backdrop-filter:blur(6px)}
+  tbody tr:hover{background:rgba(255,255,255,.06)}
+  .btn{appearance:none;border:none;border-radius:8px;padding:.4rem .6rem;color:#fff;cursor:pointer}
+  .btn.danger{background:linear-gradient(135deg,#ef5350,#d32f2f)}
+  .btn.success{background:linear-gradient(135deg,#00c853,#00bfa5)}
+  .btn.secondary{background:linear-gradient(135deg,#64b5f6,#1976d2)}
+
+  /* Popups (slide panel) */
+  .popup{
+    position:fixed;top:0;right:-360px;width:340px;height:100%;z-index:9;overflow:auto;
+    background:rgba(0,0,0,.88);backdrop-filter:blur(8px);border-left:1px solid var(--stroke);
+    transition:right .28s ease; padding:1rem;
+  }
+  .popup.open{right:0}
+  .popup h3{margin:.2rem 0 1rem}
+  .notif-item,.cuti-item{
+    background:rgba(255,255,255,.1);border:1px solid var(--stroke);border-radius:12px;padding:.6rem;margin:.5rem 0
+  }
+  .notif-item .actions,.cuti-item .right{display:flex;gap:.5rem;margin-top:.4rem;flex-wrap:wrap}
+
+  /* Profile popup */
+  .profile-grid{display:grid;gap:.6rem}
+  .profile-grid input{background:var(--glass-2);border:1px solid var(--stroke);border-radius:10px;color:#fff;padding:.5rem}
+  .profile-grid .row-inline{display:flex;gap:.5rem}
+  .avatar{width:80px;height:80px;border-radius:50%;background:#000;object-fit:cover;border:1px solid var(--stroke)}
+
+  /* Forms */
+  .form label{display:block;margin:.4rem 0 .2rem}
+  .form input,.form select,.form textarea{width:100%;background:var(--glass-2);border:1px solid var(--stroke);border-radius:10px;color:#fff;padding:.5rem;outline:none}
+  .form textarea{min-height:80px;resize:vertical}
+  .form .actions{display:flex;gap:.6rem;margin-top:.6rem;flex-wrap:wrap}
+
+  /* FAB override */
+  .fab{
+    position:fixed;right:16px;bottom:16px;z-index:8;
+    width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#42a5f5,#0d47a1);border:1px solid var(--stroke);box-shadow:0 12px 28px rgba(0,0,0,.35);
+    color:#fff;font-size:1.2rem;cursor:pointer
+  }
+
+  footer{padding:.8rem 1rem;background:linear-gradient(0deg,rgba(0,0,0,.28),rgba(0,0,0,.2));border-top:1px solid var(--stroke);text-align:center}
+
+  /* Utility */
+  .muted{color:var(--muted)}
+  .is-loading{opacity:.7;cursor:wait}
+</style>
+</head>
+<body>
+<header>
+  <div class="left">
+    <span class="logo"></span>
+    <span>Fupa Admin</span>
+  </div>
+  <div class="right">
+    <button id="notif-btn" class="icon-btn" title="Notifikasi">
+      🔔
+      <span id="notif-badge" class="badge"></span>
+    </button>
+    <button id="prof-btn" class="icon-btn" title="Profil & Akun">👤</button>
+  </div>
+</header>
+
+<main>
+  <!-- Left column: Presensi + Filters -->
+  <section class="panel" style="grid-column:1/2;">
+    <h3>Riwayat Presensi</h3>
+    <div class="row filters">
+      <div>
+        <label class="muted">Nama</label>
+        <input id="filter-name" type="text" placeholder="Cari nama…">
+      </div>
+      <div>
+        <label class="muted">Preset</label>
+        <select id="filter-preset">
+          <option value="harian">Harian</option>
+          <option value="mingguan">Mingguan</option>
+          <option value="bulanan">Bulanan</option>
+          <option value="tahunan">Tahunan</option>
+        </select>
+      </div>
+      <div>
+        <label class="muted">Mulai</label>
+        <input id="filter-start" type="date">
+      </div>
+      <div>
+        <label class="muted">Sampai</label>
+        <input id="filter-end" type="date">
+      </div>
+      <div class="actions">
+        <button id="btn-apply-filter" class="btn secondary">Terapkan</button>
+        <button id="btn-export" class="btn">Ekspor CSV</button>
+      </div>
+    </div>
+
+    <div class="table-wrap" style="margin-top:.8rem">
+      <table>
+        <thead>
+          <tr>
+            <th>Tanggal</th>
+            <th>Waktu</th>
+            <th>Nama</th>
+            <th>Jenis</th>
+            <th>Status</th>
+            <th>Koordinat</th>
+            <th>Foto</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="presensi-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Right column: Pengumuman + Permintaan Cuti -->
+  <section class="panel" style="grid-column:2/3;">
+    <h3>Pengumuman</h3>
+    <form id="ann-form" class="form">
+      <div class="row">
+        <div style="flex:1">
+          <label>Jam</label>
+          <input id="ann-time" type="time">
+        </div>
+        <div style="flex:1">
+          <label>Tanggal</label>
+          <input id="ann-date" type="date">
+        </div>
+      </div>
+      <label>Deskripsi</label>
+      <textarea id="ann-text" placeholder="Tulis pengumuman…"></textarea>
+      <div class="actions">
+        <button type="submit" class="btn">Kirim Pengumuman</button>
+      </div>
+    </form>
+    <hr style="border:none;border-top:1px solid var(--stroke);margin:1rem 0;">
+    <h3>Permintaan Cuti</h3>
+    <div id="cuti-list"></div>
+  </section>
+</main>
+
+<footer>
+  © Fupa Snack by Annisa ❤️ Karomi • <span id="clock" class="muted"></span>
+</footer>
+
+<!-- Notifications popup -->
+<div id="notif-popup" class="popup">
+  <h3>Notifikasi</h3>
+  <!-- Konten ini akan di-render dinamis oleh app.js (inbox) -->
+</div>
+
+<!-- Profile popup -->
+<div id="prof-popup" class="popup">
+  <h3>Profil & Akun</h3>
+  <div class="profile-grid">
+    <img class="avatar" data-prof="photo" alt="Foto Profil">
+    <div class="row-inline">
+      <button class="btn secondary" data-prof="pick">Ganti Foto</button>
+      <button class="btn" data-prof="logout">Logout</button>
+    </div>
+    <div>
+      <label>Nama</label>
+      <input type="text" data-prof="name" placeholder="Nama admin">
+    </div>
+    <div>
+      <label>Alamat</label>
+      <input type="text" data-prof="address" placeholder="Alamat">
+    </div>
+    <div>
+      <button class="btn success" data-prof="save">Simpan Profil</button>
+    </div>
+  </div>
+
+  <hr style="border:none;border-top:1px solid var(--stroke);margin:1rem 0;">
+  <h3>Buat Akun Karyawan</h3>
+  <form id="create-form" class="form">
+    <label>Email</label>
+    <input id="create-email" type="email" placeholder="nama@fupa.id" required>
+    <label>Password</label>
+    <input id="create-pass" type="password" placeholder="Minimal 6 karakter" required>
+    <label>UID (opsional — untuk mapping manual)</label>
+    <input id="create-uid" type="text" placeholder="Biarkan kosong untuk pakai UID Auth">
+    <div class="actions">
+      <button type="submit" class="btn success">Buat Akun</button>
+    </div>
+    <p class="muted" style="font-size:.85rem">
+      Tahap 1: buat email+password (Auth). Tahap 2: mapping users/{uid} role=karyawan. Verifikasi: akun baru login → diarahkan ke karyawan.html.
+    </p>
+  </form>
+</div>
+
+<!-- Override form (opened from FAB) -->
+<div id="override-form" class="popup">
+  <h3>Override Presensi</h3>
+  <form class="form">
+    <label>Status</label>
+    <select id="override-mode" required>
+      <option value="">--Pilih--</option>
+      <option value="wajib">Wajib presensi</option>
+      <option value="tidak">Tidak wajib presensi</option>
+    </select>
+    <label>Tanggal Mulai</label>
+    <input id="override-start" type="date" required>
+    <label>Rentang Tanggal (opsional — Selesai)</label>
+    <input id="override-end" type="date">
+    <label>Deskripsi</label>
+    <textarea id="override-desc" placeholder="Catatan…"></textarea>
+    <div class="actions">
+      <button type="submit" class="btn success">Simpan Override</button>
+      <button type="button" class="btn danger" onclick="document.getElementById('override-form').classList.remove('open')">Tutup</button>
+    </div>
+  </form>
+</div>
+
+<!-- FAB -->
+<button id="fab-override" class="fab" title="Override Presensi">⚙</button>
+
+<script type="module">
+  import Fupa from './app.js';
+  await Fupa.init();
+
+  // Live clock in footer
+  Fupa.time && Fupa.time.now && (function mountClock(){
+    const el = document.getElementById('clock');
+    const render = () => {
+      const d = Fupa.time.now();
+      el.textContent = d.toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'})
+        + ' — ' + d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) + ' WIB';
+    };
+    render(); setInterval(render,1000);
+  })();
+
+  // Bootstrap Admin Page (hooks ke seluruh kontrol)
+  Fupa.bootstrapAdminPage({
+    clock: '#clock',
+    notifBtn: '#notif-btn',
+    notifBadge: '#notif-badge',
+    notifPopup: '#notif-popup',
+    profBtn: '#prof-btn',
+    profPopup: '#prof-popup',
+
+    tableBody: '#presensi-tbody',
+    filterName: '#filter-name',
+    filterPreset: '#filter-preset',
+    filterStart: '#filter-start',
+    filterEnd: '#filter-end',
+    btnApplyFilter: '#btn-apply-filter',
+    btnExport: '#btn-export',
+
+    fabOverride: '#fab-override',
+    formOverride: '#override-form',
+    overrideMode: '#override-mode',
+    overrideStart: '#override-start',
+    overrideEnd: '#override-end',
+    overrideDesc: '#override-desc',
+
+    formAnn: '#ann-form',
+    annTime: '#ann-time',
+    annDate: '#ann-date',
+    annText: '#ann-text',
+
+    formCreate: '#create-form',
+    createEmail: '#create-email',
+    createPass: '#create-pass',
+    createUid: '#create-uid',
+
+    cutiList: '#cuti-list'
+  });
+</script>
+</body>
+</html>
+```[43dcd9a7-70db-4a1f-b0ae-981daa162054](https://github.com/sihar7/dashboard.github.io/tree/97f2e42a7dd3fc23d66826c12e66e63927683c75/resources%2Fviews%2Fmanagement%2Fdashboard.blade.php?citationMarker=43dcd9a7-70db-4a1f-b0ae-981daa162054 "1")

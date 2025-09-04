@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Karyawan — FUPA Snack</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0d47a1">
+<style>
+  html,body {
+    margin:0; padding:0; height:100%;
+    font-family:'Segoe UI',sans-serif;
+    background: linear-gradient(135deg,#0d47a1,#42a5f5);
+    color:#fff; display:flex; flex-direction:column;
+  }
+  header, footer {
+    padding:0.5rem 1rem;
+    background:rgba(0,0,0,0.2);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  header .left { display:flex; align-items:center; gap:0.5rem; }
+  header .right { display:flex; align-items:center; gap:1rem; }
+  main { flex:1; overflow-y:auto; padding:1rem; }
+  .status-bar { margin:0.5rem 0; font-weight:600; }
+  .coord { margin:0.5rem 0; }
+  .camera { display:flex; flex-direction:column; align-items:center; gap:0.5rem; }
+  video, img.preview { max-width:100%; border-radius:8px; background:#000; }
+  img.preview.visible { display:block; }
+  img.preview { display:none; }
+  .history { margin-top:1rem; }
+  .history-item {
+    background:rgba(255,255,255,0.1);
+    padding:0.5rem; border-radius:8px;
+    margin-bottom:0.5rem;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .fab {
+    position:fixed; bottom:1rem; right:1rem;
+    background:linear-gradient(135deg,#42a5f5,#0d47a1);
+    color:#fff; border:none; border-radius:50%;
+    width:56px; height:56px; font-size:1.5rem;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.3);
+  }
+  .popup {
+    position:fixed; top:0; right:-320px; width:300px; height:100%;
+    background:rgba(0,0,0,0.9); overflow-y:auto;
+    transition:right 0.3s; padding:1rem;
+  }
+  .popup.open { right:0; }
+  .popup h3 { margin-top:0; }
+  .popup .notif-item, .popup .cuti-item {
+    background:rgba(255,255,255,0.1); padding:0.5rem; border-radius:6px; margin-bottom:0.5rem;
+  }
+  .popup .actions { display:flex; gap:0.5rem; margin-top:0.5rem; }
+  .badge { background:red; border-radius:50%; padding:0.2rem 0.5rem; font-size:0.75rem; }
+  form label { display:block; margin-top:0.5rem; }
+  form input, form select, form textarea {
+    width:100%; padding:0.4rem; border:none; border-radius:4px; margin-top:0.2rem;
+  }
+  form button { margin-top:0.5rem; padding:0.5rem; border:none; border-radius:4px; background:#42a5f5; color:#fff; font-weight:600; cursor:pointer; }
+</style>
+</head>
+<body>
+<header>
+  <div class="left">
+    <strong>Fupa Snack</strong>
+  </div>
+  <div class="right">
+    <button id="notif-btn">🔔<span id="notif-badge" class="badge" style="display:none"></span></button>
+    <button id="prof-btn">👤</button>
+  </div>
+</header>
+
+<main>
+  <div id="clock"></div>
+  <div id="status" class="status-bar"></div>
+  <div class="coord">
+    <button id="btn-coord">Sesuaikan Koordinat</button>
+    <div id="coord-label">-</div>
+  </div>
+  <div>
+    <label for="jenis">Jenis Presensi:</label>
+    <select id="jenis">
+      <option value="">--Pilih--</option>
+      <option value="berangkat">Berangkat</option>
+      <option value="pulang">Pulang</option>
+    </select>
+  </div>
+  <div class="camera">
+    <video id="video" autoplay playsinline></video>
+    <img id="preview" class="preview" alt="Preview Foto">
+    <div>
+      <button id="btn-capture">Ambil Foto</button>
+      <button id="btn-retake" style="display:none">Ulangi</button>
+    </div>
+    <button id="btn-save">Simpan Presensi</button>
+  </div>
+  <div class="history">
+    <h3>Riwayat Presensi</h3>
+    <div id="history"></div>
+  </div>
+</main>
+
+<footer>© Fupa Snack by Annisa & Karomi</footer>
+
+<!-- Notifikasi Popup -->
+<div id="notif-popup" class="popup">
+  <h3>Notifikasi</h3>
+</div>
+
+<!-- Profile Popup -->
+<div id="prof-popup" class="popup">
+  <h3>Profil</h3>
+  <label>Nama: <input type="text" data-prof="name"></label>
+  <label>Alamat: <input type="text" data-prof="address"></label>
+  <img data-prof="photo" src="" alt="Foto Profil" style="width:80px;height:80px;border-radius:50%;margin-top:0.5rem;">
+  <button data-prof="pick">Ganti Foto</button>
+  <button data-prof="save">Simpan Profil</button>
+  <button data-prof="logout">Logout</button>
+</div>
+
+<!-- Form Cuti -->
+<div id="cuti-form" class="popup">
+  <h3>Form Cuti</h3>
+  <form>
+    <label>Jenis:
+      <select id="cuti-jenis">
+        <option value="">--Pilih--</option>
+        <option value="izin">Izin</option>
+        <option value="sakit">Sakit</option>
+        <option value="cuti">Cuti</option>
+      </select>
+    </label>
+    <label>Tanggal Mulai: <input type="date" id="cuti-start"></label>
+    <label>Tanggal Selesai: <input type="date" id="cuti-end"></label>
+    <label>Alasan: <textarea id="cuti-alasan"></textarea></label>
+    <button type="submit">Kirim</button>
+  </form>
+</div>
+
+<!-- FAB Cuti -->
+<button id="fab-cuti" class="fab">✚</button>
+
+<script type="module">
+  import Fupa from './app.js';
+  await Fupa.init();
+  Fupa.bootstrapKaryawanPage({
+    clock: '#clock',
+    status: '#status',
+    coordBtn: '#btn-coord',
+    coordLabel: '#coord-label',
+    jenisSelect: '#jenis',
+    video: '#video',
+    captureBtn: '#btn-capture',
+    retakeBtn: '#btn-retake',
+    previewImg: '#preview',
+    saveBtn: '#btn-save',
+    historyList: '#history',
+    notifBtn: '#notif-btn',
+    notifBadge: '#notif-badge',
+    notifPopup: '#notif-popup',
+    profBtn: '#prof-btn',
+    profPopup: '#prof-popup',
+    cutiFab: '#fab-cuti',
+    cutiForm: '#cuti-form form',
+    cutiJenis: '#cuti-jenis',
+    cutiStart: '#cuti-start',
+    cutiEnd: '#cuti-end',
+    cutiAlasan: '#cuti-alasan'
+  });
+</script>
+</body>
+</html>
